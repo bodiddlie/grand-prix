@@ -20,10 +20,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return 640, 480
+	return 1280, 800
 }
 
 func main() {
+	// Set the window size to match the logical size and ensure aspect ratio is preserved
+	ebiten.SetWindowSize(1280, 800)
+	ebiten.SetWindowTitle("Steam Deck Resolution Game")
 	game := &Game{}
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
