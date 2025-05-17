@@ -3,6 +3,7 @@ package main
 import (
 	"image/color"
 	"log"
+	"math/rand/v2"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -10,6 +11,7 @@ import (
 
 type Game struct{
 	Curves []*CurveCard
+	Hand []Renderable
 }
 
 func (g *Game) Update() error {
@@ -20,8 +22,10 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0, 0, 255, 255})
 
-	for _, card := range g.Curves {
-		card.Draw(screen)
+	for i, card := range g.Hand {
+		x := 100 + i*150
+		y := 100
+		card.Render(screen, x, y)
 	}
 }
 
@@ -32,12 +36,29 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func main() {
 	// Set the window size to match the logical size and ensure aspect ratio is preserved
 	ebiten.SetWindowSize(1280, 800)
-	ebiten.SetWindowTitle("Steam Deck Resolution Game")
-	game := &Game{}
+	ebiten.SetWindowTitle("Flat Out")
 
-	// Initialize cards with their respective images
-	game.Curves = []*CurveCard{
-		NewCurveCard("sweepers", 100, 100),
+	curves := []*CurveCard{
+		NewCurveCard("sweepers"),
+		NewCurveCard("castle"),
+		NewCurveCard("flatout"),
+		NewCurveCard("lucky"),
+		NewCurveCard("parabola"),
+		NewCurveCard("troubled_water"),
+		NewCurveCard("zorro"),
+	}
+
+	// Shuffle the list of curves
+	rand.Shuffle(len(curves), func(i, j int) { curves[i], curves[j] = curves[j], curves[i] })
+
+	// Take the top 3 curves and put them in the hand
+	hand := make([]Renderable, 3)
+	for i := 0; i < 3; i++ {
+		hand[i] = curves[i]
+	}
+	game := &Game{
+		Curves: curves,
+		Hand: hand,
 	}
 
 	if err := ebiten.RunGame(game); err != nil {
@@ -45,17 +66,15 @@ func main() {
 	}
 }
 
-type Sprite interface {
-	Draw(screen *ebiten.Image)
-	Update()
+type Renderable interface {
+	Render(screen *ebiten.Image, x, y int)
 }
 
 type CurveCard struct {
 	cardImg *ebiten.Image
-	x, y, w, h int
 }
 
-func NewCurveCard(cardName string, x, y int) *CurveCard {
+func NewCurveCard(cardName string) *CurveCard {
 	// Load the card image here
 	cardImg, _, err := ebitenutil.NewImageFromFile("assets/" + cardName + ".png")
 	if err != nil {
@@ -64,17 +83,13 @@ func NewCurveCard(cardName string, x, y int) *CurveCard {
 
 	return &CurveCard{
 		cardImg: cardImg,
-		x:       x,
-		y:       y,
-		w:       cardImg.Bounds().Dx(),
-		h:       cardImg.Bounds().Dy(),
 	}
 }
 
-func (c *CurveCard) Draw(screen *ebiten.Image) {
+func (c *CurveCard) Render(screen *ebiten.Image, x, y int) {
 	// Draw the card image at the specified position
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(c.x), float64(c.y))
+	op.GeoM.Translate(float64(x), float64(y))
 	screen.DrawImage(c.cardImg, op)
 }
 
